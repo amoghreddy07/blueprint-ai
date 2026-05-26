@@ -46,12 +46,11 @@
             z-index: 1;
         }
 
-        /* Fixed Viewport Container for the Interactive Robot */
+        /* Viewport Container optimized with exclusive 'right' edge constraints for fluid side transitions */
         .robot-viewport {
             position: fixed;
             right: 10%; 
             top: 50%;
-            transform: translateY(-50%);
             width: 380px;
             height: 380px;
             z-index: 10;
@@ -59,7 +58,9 @@
             justify-content: center;
             align-items: center;
             pointer-events: none;
-            transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+            /* Enhanced timing profile for highly responsive sliding aesthetics */
+            transition: transform 1.1s cubic-bezier(0.19, 1, 0.22, 1), top 0.8s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.5s ease;
+            transform: translate3d(0, -50%, 0);
         }
 
         /* Modern Stylized Robot Construct */
@@ -767,7 +768,7 @@
             eyeContainer.style.transform = `translate(${positionX}px, ${positionY}px)`;
         });
 
-        // Smooth Section Landing Page Navigation Tracking
+        // Smooth Section Scroll Side-to-Side sliding calculation profile
         window.addEventListener('scroll', () => {
             if (consoleModeActive) return;
 
@@ -782,15 +783,12 @@
             });
 
             if (currentSide === 'left') {
-                robotViewport.style.top = '50%';
-                robotViewport.style.left = '15%';
-                robotViewport.style.right = 'auto';
-                robotViewport.style.transform = 'translate(0, -50%)';
+                // Smoothly slides across viewport by subtracting horizontal space from fixed right edge anchor point
+                const leftShiftDistance = window.innerWidth - 380 - (window.innerWidth * 0.15);
+                robotViewport.style.transform = `translate3d(-${leftShiftDistance}px, -50%, 0)`;
             } else {
-                robotViewport.style.top = '50%';
-                robotViewport.style.left = 'auto';
-                robotViewport.style.right = '10%'; 
-                robotViewport.style.transform = 'translate(0, -50%)';
+                // Returns smoothly to default side layout position standard
+                robotViewport.style.transform = 'translate3d(0, -50%, 0)';
             }
         });
 
@@ -800,12 +798,17 @@
             workspaceOverlay.classList.add('active');
             document.body.style.overflow = 'hidden';
 
-            // Fixed Position Variables: Lifts up slightly above absolute vertical baseline (-10% height shift)
+            // Reset translation styles prior to appending node into split-screen framework cell container
             robotViewport.style.position = 'absolute';
             robotViewport.style.top = '40%'; 
-            robotViewport.style.left = '50%';
             robotViewport.style.right = 'auto';
             robotViewport.style.transform = 'translate(-50%, -50%)'; 
+            
+            // Forces manual override calculation logic pathing 
+            setTimeout(() => {
+                robotViewport.style.left = '50%';
+            }, 20);
+
             robotDock.appendChild(robotViewport);
         }
 
@@ -822,7 +825,7 @@
             robotViewport.style.top = '50%';
             robotViewport.style.left = 'auto';
             robotViewport.style.right = '10%';
-            robotViewport.style.transform = 'translate(0, -50%)';
+            robotViewport.style.transform = 'translate3d(0, -50%, 0)';
             document.body.appendChild(robotViewport);
         }
 
