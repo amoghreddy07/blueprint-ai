@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BlueprintAI // Core Terminal</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Plus+Jakarta+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-deep: #050507;
+            --panel-bg: #0b0b0e;
+            --accent-white: #ffffff;
+            --panel-border: rgba(255, 255, 255, 0.08);
+            --text-main: #f5f5f7;
+            --text-muted: #626272;
+            --grid-line: rgba(255, 255, 255, 0.015);
+        }
+
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+
+        html, body {
+            background-color: var(--bg-deep);
+            color: var(--text-main);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+        }
+
+        /* Background Grid */
+        .bg-matrix {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: 
+                linear-gradient(to right, var(--grid-line) 1px, transparent 1px) repeat-x,
+                linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px) repeat-y;
+            background-size: 25% 100%, 100% 150px;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* Fixed Viewport Container for the Interactive Robot */
+        .robot-viewport {
+            position: fixed;
+            right: 10%; 
+            top: 50%;
+            transform: translateY(-50%);
+            width: 380px;
+            height: 380px;
+            z-index: 10;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            pointer-events: none;
+            transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* Modern Stylized Robot Construct */
+        .robot-core {
+            width: 220px;
+            height: 220px;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Floating Animation Container */
+        .robot-head-floater {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            z-index: 2;
+            animation: floating 4s ease-in-out infinite;
+        }
+
+        .robot-head {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #13131a 0%, #07070a 100%);
+            border: 2px solid rgba(255, 255, 255, 0.12);
+            border-radius: 44px;
+            padding: 20px;
+            box-shadow: 0 40px 80px rgba(0,0,0,0.7), inset 0 2px 8px rgba(255,255,255,0.08);
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .robot-visor {
+            width: 100%;
+            height: 100%;
+            background: #000000;
+            border-radius: 28px;
+            border: 1px solid rgba(255,255,255,0.03);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .eye-container {
+            position: absolute;
+            top: 42%;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: space-around;
+            padding: 0 40px;
+            transition: transform 0.08s ease-out, opacity 0.3s ease;
+        }
+
+        .eye {
+            width: 18px;
+            height: 18px;
+            background: var(--accent-white);
+            border-radius: 50%;
+            box-shadow: 0 0 15px var(--accent-white), 0 0 30px rgba(255,255,255,0.4);
+            transition: all 0.2s ease-in-out;
+        }
+
+        /* Modern Kinetic Plasma Orb Loader */
+        .plasma-orb-loader {
+            position: absolute;
+            width: 110px;
+            height: 110px;
+            border-radius: 50%;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            pointer-events: none;
+        }
+
+        .plasma-ring {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            border-radius: 50%;
+            border: 1.5px solid transparent;
+            border-top-color: rgba(168, 85, 247, 0.8);
+            border-bottom-color: rgba(59, 130, 246, 0.8);
+            box-shadow: 0 0 12px rgba(168, 85, 247, 0.2);
+            animation: spinPlasma 2s linear infinite;
+        }
+        .plasma-ring:nth-child(2) {
+            transform: rotate(45deg);
+            border-top-color: rgba(236, 72, 153, 0.7);
+            border-bottom-color: rgba(147, 51, 234, 0.7);
+            animation: spinPlasma 1.4s linear infinite reverse;
+        }
+        .plasma-ring:nth-child(3) {
+            transform: rotate(-45deg);
+            border-left-color: rgba(59, 130, 246, 0.9);
+            border-right-color: rgba(168, 85, 247, 0.5);
+            animation: spinPlasma 2.8s ease-in-out infinite;
+        }
+
+        .plasma-core-glow {
+            position: absolute;
+            top: 15%; left: 15%; width: 70%; height: 70%;
+            background: radial-gradient(circle, rgba(147, 51, 234, 0.25) 0%, rgba(59, 130, 246, 0.1) 50%, transparent 100%);
+            border-radius: 50%;
+            filter: blur(4px);
+            animation: plasmaPulse 1.5s ease-in-out infinite alternate;
+        }
+
+        @keyframes spinPlasma {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        @keyframes plasmaPulse {
+            0% { transform: scale(0.9); opacity: 0.6; }
+            100% { transform: scale(1.1); opacity: 1; }
+        }
+
+        /* Status Light Dots Array */
+        .light-bars {
+            position: absolute;
+            bottom: -22px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 6px;
+            z-index: 5;
+        }
+        .light-dot {
+            width: 5px;
+            height: 5px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+        .light-dot.active {
+            background: #00ff66;
+            box-shadow: 0 0 8px #00ff66;
+        }
+        .light-dot.processing {
+            background: #a855f7;
+            box-shadow: 0 0 8px #a855f7;
+        }
+
+        /* Centered Success Ring Canvas Boundary Aura */
+        .success-glow-ring {
+            position: absolute;
+            width: 360px;
+            height: 360px;
+            border: 1.5px solid #00ff66;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(0, 255, 102, 0.04) 0%, transparent 70%);
+            opacity: 0;
+            transform: scale(0.75);
+            pointer-events: none;
+            transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+            z-index: 1;
+            top: 50%;
+            left: 50%;
+            margin-top: -180px;
+            margin-left: -180px;
+        }
+
+        @keyframes floating {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-12px) rotate(0.5deg); }
+        }
+
+        /* Toggle State Modifications */
+        .robot-core.processing-mode .eye-container {
+            opacity: 0;
+        }
+        .robot-core.processing-mode .plasma-orb-loader {
+            display: block;
+            opacity: 1;
+        }
+        .robot-core.success-pulse .success-glow-ring {
+            opacity: 1;
+            transform: scale(1.0);
+        }
+
+        /* Layout Architecture Definitions */
+        .main-wrapper {
+            position: relative;
+            z-index: 5;
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 0 40px;
+        }
+
+        header {
+            height: 120px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--panel-border);
+        }
+
+        .logo {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 900;
+            letter-spacing: 4px;
+            font-size: 1.15rem;
+        }
+
+        .landing-hero {
+            min-height: calc(100vh - 120px);
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            align-items: center;
+            padding: 60px 0;
+        }
+
+        .hero-left { max-width: 580px; }
+
+        .section-badge {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            color: var(--text-muted);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .section-badge::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            background: var(--text-muted);
+            display: inline-block;
+        }
+
+        h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 4.5rem;
+            font-weight: 900;
+            line-height: 1;
+            letter-spacing: -2px;
+            margin-bottom: 24px;
+            text-transform: uppercase;
+        }
+
+        h2.section-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 900;
+            letter-spacing: -1px;
+            margin-bottom: 40px;
+            text-transform: uppercase;
+        }
+
+        .hero-desc {
+            color: var(--text-muted);
+            line-height: 1.75;
+            font-size: 0.95rem;
+            margin-bottom: 40px;
+        }
+
+        .capabilities-container { padding: 80px 0; }
+
+        .scroller-block {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            align-items: center;
+            min-height: 50vh;
+            padding: 40px 0;
+        }
+
+        .card-wrapper-left { grid-column: 1; max-width: 540px; }
+        .card-wrapper-right { grid-column: 2; max-width: 540px; margin-left: auto; }
+
+        .matrix-card {
+            background: rgba(255, 255, 255, 0.01);
+            border: 1px solid var(--panel-border);
+            padding: 32px;
+            border-radius: 4px;
+            position: relative;
+        }
+
+        .matrix-card h3 {
+            font-size: 1.1rem;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .matrix-card .bold-lead {
+            color: var(--accent-white);
+            font-size: 0.9rem;
+            font-weight: 600;
+            display: block;
+            margin-bottom: 10px;
+            letter-spacing: 0.5px;
+        }
+
+        .matrix-card p.desc {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            line-height: 1.6;
+        }
+
+        .portal-dock-section {
+            min-height: 70vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: flex-start;
+            border-top: 1px solid var(--panel-border);
+            padding: 100px 0;
+            max-width: 600px;
+        }
+
+        .cta-btn {
+            background: var(--accent-white);
+            color: #000;
+            border: 1px solid var(--accent-white);
+            padding: 18px 40px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+        }
+        .cta-btn:hover {
+            background: transparent;
+            color: #fff;
+        }
+
+        /* Split-Screen Interactive Workspace Terminal Window Overlay */
+        .workspace-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: var(--bg-deep);
+            z-index: 100;
+            padding: 40px;
+            display: grid;
+            grid-template-columns: 1.15fr 0.85fr; 
+            gap: 40px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .workspace-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .terminal-panel {
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: 6px;
+            display: grid;
+            grid-template-rows: auto 1fr auto;
+            overflow: hidden;
+        }
+
+        .terminal-header {
+            padding: 24px 32px;
+            border-bottom: 1px solid var(--panel-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .output-heading {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--text-main);
+            font-weight: 600;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 8px;
+            background: #111115;
+            padding: 4px;
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 4px;
+        }
+
+        .tab {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            padding: 6px 16px;
+            font-family: inherit;
+            border-radius: 2px;
+            transition: all 0.2s;
+        }
+        .tab:hover { color: #fff; }
+        .tab.active {
+            background: rgba(255,255,255,0.06);
+            color: var(--accent-white);
+        }
+
+        .terminal-body {
+            padding: 32px;
+            overflow-y: auto;
+            background: #08080b;
+        }
+
+        pre {
+            font-family: 'JetBrains Mono', monospace;
+            color: #d1d1e2;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .input-footer {
+            padding: 24px 32px;
+            border-top: 1px solid var(--panel-border);
+            background: #0d0d12;
+        }
+
+        .input-box-row {
+            display: flex;
+            background: #050507;
+            border: 1px solid var(--panel-border);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .input-box-row input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: #fff;
+            padding: 18px 20px;
+            font-family: inherit;
+            font-size: 0.95rem;
+        }
+
+        .execute-btn {
+            background: var(--accent-white);
+            color: #000;
+            border: none;
+            padding: 0 28px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .execute-btn:hover { background: #e0e0e0; }
+        .execute-btn:disabled { background: #222; color: #555; cursor: not-allowed; }
+
+        .status-message {
+            margin-top: 12px;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            min-height: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .mini-pulse {
+            width: 6px;
+            height: 6px;
+            background: #ffaa00;
+            border-radius: 50%;
+            display: none;
+            animation: pulse-glow 1s infinite alternate;
+        }
+        @keyframes pulse-glow { from { opacity: 0.3; } to { opacity: 1; } }
+
+        .close-action {
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: color 0.2s;
+        }
+        .close-action:hover { color: #fff; }
+
+        /* The Right Side Split-Dock Container */
+        .right-robot-dock {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            background: radial-gradient(circle at 50% 50%, #0d0d14 0%, transparent 75%);
+        }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <div class="bg-matrix"></div>
+
+    <div class="robot-viewport" id="robotViewport">
+        <div class="robot-core" id="robotCore">
+            <div class="success-glow-ring"></div>
+            <div class="robot-head-floater">
+                <div class="robot-head">
+                    <div class="robot-visor">
+                        <div class="eye-container" id="eyeContainer">
+                            <div class="eye" id="leftEye"></div>
+                            <div class="eye" id="rightEye"></div>
+                        </div>
+                        <div class="plasma-orb-loader" id="plasmaLoader">
+                            <div class="plasma-core-glow"></div>
+                            <div class="plasma-ring"></div>
+                            <div class="plasma-ring"></div>
+                            <div class="plasma-ring"></div>
+                        </div>
+                    </div>
+                    <div class="light-bars">
+                        <div class="light-dot active" id="dot1"></div>
+                        <div class="light-dot" id="dot2"></div>
+                        <div class="light-dot" id="dot3"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-wrapper" id="scrollContent">
+        <header>
+            <div class="logo">BlueprintAI</div>
+            <div style="font-size: 0.75rem; letter-spacing: 2px; color: var(--text-muted); text-transform: uppercase;">System Ready</div>
+        </header>
+
+        <main class="landing-hero">
+            <div class="hero-left">
+                <div class="section-badge">Autonomous Design Matrix</div>
+                <h1>Future</h1>
+                <p class="hero-desc">Translate complex product logic scripts, operational flow targets, and database dependencies into fully organized production-ready structural configuration profiles instantly.</p>
+            </div>
+            <div></div>
+        </main>
+
+        <section class="capabilities-container">
+            <div class="section-badge">Capabilities Core</div>
+            <h2 class="section-title">What can Blueprint AI do?</h2>
+
+            <div class="scroller-block" data-side="right">
+                <div class="card-wrapper-left">
+                    <div class="matrix-card">
+                        <h3>⚡ Instant Blueprints</h3>
+                        <span class="bold-lead">"From idea to architecture in one click"</span>
+                        <p class="desc">Converts any app idea into a complete technical blueprint in seconds</p>
+                    </div>
+                </div>
+                <div></div>
+            </div>
+
+            <div class="scroller-block flipped" data-side="left">
+                <div></div>
+                <div class="card-wrapper-right">
+                    <div class="matrix-card">
+                        <h3>🧠 Understands Natural Language</h3>
+                        <span class="bold-lead">"Speak human, get technical"</span>
+                        <p class="desc">No technical knowledge needed — just describe your app like you're talking to a friend</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="scroller-block" data-side="right">
+                <div class="card-wrapper-left">
+                    <div class="matrix-card">
+                        <h3>🗄️ Designs Your Database</h3>
+                        <span class="bold-lead">"Never design a schema manually again"</span>
+                        <p class="desc">Automatically creates tables, columns, relationships and data types</p>
+                    </div>
+                </div>
+                <div></div>
+            </div>
+
+            <div class="scroller-block flipped" data-side="left">
+                <div></div>
+                <div class="card-wrapper-right">
+                    <div class="matrix-card">
+                        <h3>🔌 Generates APIs</h3>
+                        <span class="bold-lead">"Full REST API designed automatically"</span>
+                        <p class="desc">Creates all the endpoints your app needs with request and response structures</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="scroller-block" data-side="right">
+                <div class="card-wrapper-left">
+                    <div class="matrix-card">
+                        <h3>🎨 Plans Your UI</h3>
+                        <span class="bold-lead">"Every screen planned before you write a line of code"</span>
+                        <p class="desc">Defines every page, route and component your frontend needs</p>
+                    </div>
+                </div>
+                <div></div>
+            </div>
+
+            <div class="scroller-block flipped" data-side="left">
+                <div></div>
+                <div class="card-wrapper-right">
+                    <div class="matrix-card">
+                        <h3>🛡️ Self-Healing Output</h3>
+                        <span class="bold-lead">"Reliable output, every single time"</span>
+                        <p class="desc">Detects broken or invalid output and repairs it automatically — no manual fixes</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="portal-dock-section" id="portalDockBlock">
+            <div class="section-badge">Console Entry Node</div>
+            <h2 class="section-title">Ready to Execute?</h2>
+            <p class="hero-desc" style="margin-bottom: 20px;">Initialize the blueprint console workspace to begin processing structural parameters immediately.</p>
+            <button class="cta-btn" onclick="activateConsole()">Launch Terminal</button>
+        </section>
+    </div>
+
+    <div class="workspace-overlay" id="workspaceOverlay">
+        <div class="terminal-panel">
+            <div class="terminal-header">
+                <div class="output-heading" id="panelHeading">System Output // BLUEPRINT</div>
+                <div class="tabs">
+                    <button class="tab active" onclick="switchOutputTab('intent', this)">Intent</button>
+                    <button class="tab" onclick="switchOutputTab('design', this)">Design</button>
+                    <button class="tab" onclick="switchOutputTab('schema', this)">Full Schema</button>
+                </div>
+            </div>
+            
+            <div class="terminal-body">
+                <pre id="intentOut">// Awaiting input payload initialization parameter profiles...</pre>
+                <pre id="designOut" class="hidden"></pre>
+                <pre id="schemaOut" class="hidden"></pre>
+            </div>
+
+            <div class="input-footer">
+                <div class="input-box-row">
+                    <input type="text" id="prompt" placeholder="Describe your app idea (e.g., Build a CRM with dashboard)..." oninput="captureInputFeedback()">
+                    <button class="execute-btn" id="generateBtn" onclick="generate()">Execute</button>
+                </div>
+                <div class="status-message" id="status">
+                    <div class="mini-pulse" id="statusPulse"></div>
+                    <span id="statusText">// Terminal Pipeline Idle</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="right-robot-dock" id="robotDock">
+            <div class="close-action" style="position: absolute; top: 24px; right: 32px;" onclick="deactivateConsole()">✕ Exit Terminal</div>
+        </div>
+    </div>
+
+    <script>
+        const robotViewport = document.getElementById('robotViewport');
+        const robotCore = document.getElementById('robotCore');
+        const eyeContainer = document.getElementById('eyeContainer');
+        const leftEye = document.getElementById('leftEye');
+        const rightEye = document.getElementById('rightEye');
+        const promptInput = document.getElementById('prompt');
+        const workspaceOverlay = document.getElementById('workspaceOverlay');
+        const robotDock = document.getElementById('robotDock');
+        const statusText = document.getElementById('statusText');
+        const statusPulse = document.getElementById('statusPulse');
+        const generateBtn = document.getElementById('generateBtn');
+        const scrollerBlocks = document.querySelectorAll('.scroller-block');
+        const dot1 = document.getElementById('dot1');
+        const dot2 = document.getElementById('dot2');
+        const dot3 = document.getElementById('dot3');
+
+        let trackingCursor = true;
+        let consoleModeActive = false;
+
+        // Eye Tracking Logic
+        window.addEventListener('mousemove', (e) => {
+            if (!trackingCursor) return;
+
+            const rect = eyeContainer.getBoundingClientRect();
+            const centerX = rect.left + (rect.width / 2);
+            const centerY = rect.top + (rect.height / 2);
+
+            const angle = Math.atan2(e.clientY - centerY, e.clientX - centerX);
+            const range = 12; 
+            
+            const positionX = Math.cos(angle) * range;
+            const positionY = Math.sin(angle) * range * 0.6; 
+
+            eyeContainer.style.transform = `translate(${positionX}px, ${positionY}px)`;
+        });
+
+        // Smooth Section Landing Page Navigation Tracking
+        window.addEventListener('scroll', () => {
+            if (consoleModeActive) return;
+
+            let currentSide = 'right'; 
+            const viewportCenter = window.innerHeight / 2;
+
+            scrollerBlocks.forEach(block => {
+                const blockRect = block.getBoundingClientRect();
+                if (blockRect.top < viewportCenter && blockRect.bottom > viewportCenter) {
+                    currentSide = block.getAttribute('data-side');
+                }
+            });
+
+            if (currentSide === 'left') {
+                robotViewport.style.top = '50%';
+                robotViewport.style.left = '15%';
+                robotViewport.style.right = 'auto';
+                robotViewport.style.transform = 'translate(0, -50%)';
+            } else {
+                robotViewport.style.top = '50%';
+                robotViewport.style.left = 'auto';
+                robotViewport.style.right = '10%'; 
+                robotViewport.style.transform = 'translate(0, -50%)';
+            }
+        });
+
+        // Setup Right Panel Positioning inside Active Terminal Layout Window
+        function activateConsole() {
+            consoleModeActive = true;
+            workspaceOverlay.classList.add('active');
+            document.body.style.overflow = 'hidden';
+
+            // Fixed Position Variables: Lifts up slightly above absolute vertical baseline (-10% height shift)
+            robotViewport.style.position = 'absolute';
+            robotViewport.style.top = '40%'; 
+            robotViewport.style.left = '50%';
+            robotViewport.style.right = 'auto';
+            robotViewport.style.transform = 'translate(-50%, -50%)'; 
+            robotDock.appendChild(robotViewport);
+        }
+
+        // Restores Base Layout positioning coordinates flawlessly
+        function deactivateConsole() {
+            consoleModeActive = false;
+            workspaceOverlay.classList.remove('active');
+            document.body.style.overflow = 'auto';
+
+            robotCore.className = 'robot-core';
+            revertEyeProfile();
+
+            robotViewport.style.position = 'fixed';
+            robotViewport.style.top = '50%';
+            robotViewport.style.left = 'auto';
+            robotViewport.style.right = '10%';
+            robotViewport.style.transform = 'translate(0, -50%)';
+            document.body.appendChild(robotViewport);
+        }
+
+        function captureInputFeedback() {
+            if (promptInput.value.trim().length > 0) {
+                leftEye.style.width = '24px'; leftEye.style.height = '10px'; leftEye.style.borderRadius = '5px';
+                rightEye.style.width = '24px'; rightEye.style.height = '10px'; rightEye.style.borderRadius = '5px';
+            } else {
+                revertEyeProfile();
+            }
+        }
+
+        function revertEyeProfile() {
+            leftEye.style.width = '18px'; leftEye.style.height = '18px'; leftEye.style.borderRadius = '50%';
+            leftEye.style.backgroundColor = 'var(--accent-white)';
+            leftEye.style.boxShadow = '0 0 15px var(--accent-white)';
+            leftEye.style.clipPath = 'none';
+            rightEye.style.width = '18px'; rightEye.style.height = '18px'; rightEye.style.borderRadius = '50%';
+            rightEye.style.backgroundColor = 'var(--accent-white)';
+            rightEye.style.boxShadow = '0 0 15px var(--accent-white)';
+            rightEye.style.clipPath = 'none';
+            
+            dot1.className = 'light-dot active';
+            dot2.className = 'light-dot';
+            dot3.className = 'light-dot';
+            trackingCursor = true;
+        }
+
+        // Processing Pipeline Trigger Initialization 
+        async function generate() {
+            const promptValue = promptInput.value.trim();
+            if (!promptValue) return alert('Please input architectural targets profile prompt.');
+
+            generateBtn.disabled = true;
+            trackingCursor = false;
+
+            // Trigger Processing Visor Interface
+            robotCore.className = 'robot-core processing-mode';
+            
+            dot1.className = 'light-dot processing';
+            dot2.className = 'light-dot processing';
+            dot3.className = 'light-dot processing';
+            
+            statusPulse.style.display = 'block';
+            statusText.textContent = 'Running blueprint pipeline... compiling target matrix models';
+
+            try {
+                const response = await fetch('/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt: promptValue })
+                });
+                
+                const data = await response.json();
+
+                document.getElementById('intentOut').textContent = data.intent ? JSON.stringify(data.intent, null, 2) : '// No Intent Profile Available';
+                document.getElementById('designOut').textContent = data.design ? JSON.stringify(data.design, null, 2) : '// No Design Specification Profile Available';
+                document.getElementById('schemaOut').textContent = data.result ? JSON.stringify(data.result, null, 2) : '// No Schema Node Profile Available';
+
+                // Fixed Vector Success Completeness Window Configuration
+                robotCore.className = 'robot-core success-pulse';
+                
+                leftEye.style.width = '24px'; leftEye.style.height = '24px'; leftEye.style.backgroundColor = '#00ff66';
+                leftEye.style.boxShadow = '0 0 20px #00ff66';
+                leftEye.style.clipPath = 'polygon(20% 40%, 45% 65%, 90% 15%, 100% 25%, 45% 90%, 10% 50%)';
+                
+                rightEye.style.width = '24px'; rightEye.style.height = '24px'; rightEye.style.backgroundColor = '#00ff66';
+                rightEye.style.boxShadow = '0 0 20px #00ff66';
+                rightEye.style.clipPath = 'polygon(20% 40%, 45% 65%, 90% 15%, 100% 25%, 45% 90%, 10% 50%)';
+                
+                dot1.className = 'light-dot active';
+                dot2.className = 'light-dot active';
+                dot3.className = 'light-dot active';
+
+                statusText.textContent = '✓ Pipeline compilation cycle finished successfully';
+                statusPulse.style.display = 'none';
+
+                setTimeout(() => {
+                    if (consoleModeActive) {
+                        robotCore.className = 'robot-core';
+                        revertEyeProfile();
+                    }
+                }, 5000);
+
+            } catch (err) {
+                robotCore.className = 'robot-core';
+                revertEyeProfile();
+                document.getElementById('intentOut').textContent = '// Pipeline execution exception thrown during generation request cycle.';
+                statusText.textContent = '✕ Engine configuration pipeline exception error';
+                statusPulse.style.display = 'none';
+            }
+
+            generateBtn.disabled = false;
+        }
+
+        function switchOutputTab(targetTabId, element) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            
+            document.getElementById('intentOut').classList.add('hidden');
+            document.getElementById('designOut').classList.add('hidden');
+            document.getElementById('schemaOut').classList.add('hidden');
+
+            element.classList.add('active');
+            document.getElementById(targetTabId + 'Out').classList.remove('hidden');
+            document.getElementById('panelHeading').textContent = `System Output // ${targetTabId.toUpperCase()}`;
+        }
+
+        promptInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !generateBtn.disabled) generate();
+        });
+    </script>
+</body>
+</html>
